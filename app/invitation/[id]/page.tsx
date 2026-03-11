@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
+import { toPng } from 'html-to-image'
 import { 
   MapPin, Phone, User, Users, Clock, Calendar, ChefHat, 
-  Sparkles, Utensils, Share2, CheckCircle, XCircle, 
-  HelpCircle, MessageSquare, Send, X
+  Sparkles, Utensils, Share2, Download, CheckCircle, X,
+  MessageSquare
 } from 'lucide-react'
 
 interface Dish {
@@ -50,22 +51,9 @@ export default function InvitationPage() {
   const [data, setData] = useState<BanquetData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  
-  // RSVP 状态
-  const [showRSVP, setShowRSVP] = useState(false)
-  const [rsvpForm, setRsvpForm] = useState({
-    guestName: '',
-    guestPhone: '',
-    status: 'confirmed',
-    attendeeCount: 1,
-    dietaryRestrictions: '',
-    message: ''
-  })
-  const [rsvpSubmitting, setRsvpSubmitting] = useState(false)
-  const [rsvpSuccess, setRsvpSuccess] = useState(false)
-  
-  // 分享弹窗
   const [showShare, setShowShare] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const invitationRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,29 +72,25 @@ export default function InvitationPage() {
     fetchData()
   }, [params.id])
 
-  // 提交 RSVP
-  const handleRSVP = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setRsvpSubmitting(true)
-    
+  // 导出邀请函图片
+  const exportImage = async () => {
+    if (!invitationRef.current) return
+    setExporting(true)
     try {
-      const response = await fetch(`/api/banquet/${params.id}/rsvp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rsvpForm)
+      const dataUrl = await toPng(invitationRef.current, { 
+        quality: 0.95, 
+        pixelRatio: 2,
+        cacheBust: true
       })
       
-      if (!response.ok) throw new Error('提交失败')
-      
-      setRsvpSuccess(true)
-      // 刷新数据
-      const dataRes = await fetch(`/api/banquet/${params.id}`)
-      const newData = await dataRes.json()
-      setData(newData)
+      const link = document.createElement('a')
+      link.download = `${data?.title}_邀请函.png`
+      link.href = dataUrl
+      link.click()
     } catch (err) {
-      alert('提交失败，请重试')
+      alert('导出失败，请重试')
     } finally {
-      setRsvpSubmitting(false)
+      setExporting(false)
     }
   }
 
@@ -151,7 +135,6 @@ export default function InvitationPage() {
     )
   }
 
-  // 格式化日期
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
@@ -169,10 +152,32 @@ export default function InvitationPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      {/* 导出按钮 - 固定在右上角 */}
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <button
+          onClick={exportImage}
+          disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2 bg-[#c9a962] text-white rounded-full shadow-lg hover:bg-[#a0854a] transition-all disabled:opacity-50 text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          {exporting ? '导出中...' : '保存图片'}
+        </button>
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md text-white rounded-full shadow-lg hover:bg-white/20 transition-all text-sm font-medium"
+        >
+          <Share2 className="w-4 h-4" />
+          分享
+        </button>
+      </div>
+
       {/* 邀请函主体 */}
-      <div className="max-w-lg mx-auto bg-[#faf9f7] min-h-screen shadow-2xl relative">
+      <div 
+        ref={invitationRef}
+        className="max-w-md mx-auto bg-[#faf9f7] min-h-screen shadow-2xl relative"
+      >
         {/* 顶部装饰条 */}
-        <div className="h-1.5 gold-gradient"></div>
+        <div className="h-1.5" style={{ background: 'linear-gradient(135deg, #a0854a 0%, #c9a962 50%, #e8d5a3 100%)' }}></div>
         
         {/* 邀请函头部 */}
         <div className="relative bg-[#0a0a0a] text-white px-6 py-12 text-center overflow-hidden">
@@ -183,7 +188,7 @@ export default function InvitationPage() {
           </div>
           
           <div className="relative z-10">
-            <p className="text-[#c9a962] text-sm tracking-[0.3em] uppercase mb-4">
+            <p className="text-[#c9a962] text-xs tracking-[0.3em] uppercase mb-4">
               {data.restaurant.name}
             </p>
             <h1 className="font-serif-title text-3xl font-bold mb-3">
@@ -318,16 +323,6 @@ export default function InvitationPage() {
             </div>
           )}
 
-          {/* RSVP 统计 */}
-          {data.rsvps && data.rsvps.length > 0 && (
-            <div className="bg-[#f7f5f0] rounded-xl p-5 mb-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[#6b6560]">已确认出席</span>
-                <span className="font-bold text-[#0a0a0a]">{confirmedCount} 人</span>
-              </div>
-            </div>
-          )}
-
           {/* 主人信息 */}
           <div className="border-t border-[#e8e4de] pt-6 mb-6">
             <div className="flex items-center justify-center gap-6 text-sm">
@@ -342,44 +337,24 @@ export default function InvitationPage() {
             </div>
           </div>
 
-          {/* 备注 */}
-          {data.notes && (
-            <div className="mb-6 p-4 bg-[#c9a962]/10 rounded-lg">
-              <p className="text-sm text-[#a0854a]">
-                <span className="font-medium">特别提示：</span>
-                {data.notes}
-              </p>
-            </div>
-          )}
-
-          {/* RSVP & Share Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowRSVP(true)}
-              className="flex-1 py-3.5 bg-[#0a0a0a] text-white rounded-xl font-medium hover:bg-[#1a1a1a] transition-all flex items-center justify-center gap-2"
-            >
-              <CheckCircle className="w-5 h-5" />
-              确认出席
-            </button>
-            <button
-              onClick={handleShare}
-              className="px-5 py-3.5 border border-[#e8e4de] rounded-xl hover:border-[#c9a962] transition-all"
-            >
-              <Share2 className="w-5 h-5 text-[#6b6560]" />
-            </button>
-          </div>
-
           {/* 餐厅电话 */}
-          <div className="mt-6 text-center">
+          <div className="text-center mb-8">
             <p className="text-xs text-[#6b6560] mb-1">预订咨询</p>
             <a href={`tel:${data.restaurant.phone}`} className="text-lg font-bold text-[#0a0a0a]">
               {data.restaurant.phone}
             </a>
           </div>
+
+          {/* 底部提示 */}
+          <div className="text-center">
+            <p className="text-xs text-[#6b6560]">
+              期待与您相见 · {data.restaurant.name}
+            </p>
+          </div>
         </div>
 
         {/* 底部装饰 */}
-        <div className="h-1.5 gold-gradient"></div>
+        <div className="h-1.5" style={{ background: 'linear-gradient(135deg, #a0854a 0%, #c9a962 50%, #e8d5a3 100%)' }}></div>
         
         {/* 底部信息 */}
         <div className="bg-[#f7f5f0] py-6 text-center border-t border-[#e8e4de]">
@@ -388,145 +363,6 @@ export default function InvitationPage() {
           </p>
         </div>
       </div>
-
-      {/* RSVP 弹窗 */}
-      {showRSVP && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in-scale">
-            {rsvpSuccess ? (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
-                </div>
-                <h3 className="font-serif-title text-xl font-bold text-[#0a0a0a] mb-2">
-                  提交成功
-                </h3>
-                <p className="text-[#6b6560] mb-6">感谢您的回复，期待与您相见</p>
-                <button
-                  onClick={() => setShowRSVP(false)}
-                  className="w-full py-3 bg-[#0a0a0a] text-white rounded-xl font-medium"
-                >
-                  关闭
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between p-6 border-b border-[#e8e4de]">
-                  <h3 className="font-serif-title text-lg font-bold text-[#0a0a0a]">确认出席</h3>
-                  <button onClick={() => setShowRSVP(false)}>
-                    <X className="w-5 h-5 text-[#6b6560]" />
-                  </button>
-                </div>
-                <form onSubmit={handleRSVP} className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm text-[#6b6560] mb-1.5">您的姓名 *</label>
-                    <input
-                      type="text"
-                      required
-                      value={rsvpForm.guestName}
-                      onChange={(e) => setRsvpForm({...rsvpForm, guestName: e.target.value})}
-                      className="w-full px-4 py-3 border border-[#e8e4de] rounded-lg focus:outline-none focus:border-[#c9a962]"
-                      placeholder="请输入姓名"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[#6b6560] mb-1.5">联系电话</label>
-                    <input
-                      type="tel"
-                      value={rsvpForm.guestPhone}
-                      onChange={(e) => setRsvpForm({...rsvpForm, guestPhone: e.target.value})}
-                      className="w-full px-4 py-3 border border-[#e8e4de] rounded-lg focus:outline-none focus:border-[#c9a962]"
-                      placeholder="请输入电话"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[#6b6560] mb-1.5">出席状态 *</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { value: 'confirmed', label: '确认出席', icon: CheckCircle },
-                        { value: 'pending', label: '待定', icon: HelpCircle },
-                        { value: 'declined', label: '无法出席', icon: XCircle },
-                      ].map(({ value, label, icon: Icon }) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => setRsvpForm({...rsvpForm, status: value})}
-                          className={`py-2 px-3 rounded-lg text-sm flex flex-col items-center gap-1 transition-all ${
-                            rsvpForm.status === value
-                              ? 'bg-[#0a0a0a] text-white'
-                              : 'bg-[#f7f5f0] text-[#6b6560] hover:bg-[#e8e4de]'
-                          }`}
-                        >
-                          <Icon className="w-4 h-4" />
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {rsvpForm.status === 'confirmed' && (
-                    <div>
-                      <label className="block text-sm text-[#6b6560] mb-1.5">出席人数</label>
-                      <div className="flex items-center gap-3">
-                        {[1, 2, 3, 4, 5].map((num) => (
-                          <button
-                            key={num}
-                            type="button"
-                            onClick={() => setRsvpForm({...rsvpForm, attendeeCount: num})}
-                            className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                              rsvpForm.attendeeCount === num
-                                ? 'bg-[#c9a962] text-white'
-                                : 'bg-[#f7f5f0] text-[#6b6560] hover:bg-[#e8e4de]'
-                            }`}
-                          >
-                            {num}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-sm text-[#6b6560] mb-1.5">忌口/过敏</label>
-                    <input
-                      type="text"
-                      value={rsvpForm.dietaryRestrictions}
-                      onChange={(e) => setRsvpForm({...rsvpForm, dietaryRestrictions: e.target.value})}
-                      className="w-full px-4 py-3 border border-[#e8e4de] rounded-lg focus:outline-none focus:border-[#c9a962]"
-                      placeholder="如：不吃海鲜、素食等"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[#6b6560] mb-1.5">留言</label>
-                    <textarea
-                      rows={2}
-                      value={rsvpForm.message}
-                      onChange={(e) => setRsvpForm({...rsvpForm, message: e.target.value})}
-                      className="w-full px-4 py-3 border border-[#e8e4de] rounded-lg focus:outline-none focus:border-[#c9a962] resize-none"
-                      placeholder="想对主人说什么..."
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={rsvpSubmitting}
-                    className="w-full py-3.5 bg-[#0a0a0a] text-white rounded-xl font-medium hover:bg-[#1a1a1a] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {rsvpSubmitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        提交中...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        提交回复
-                      </>
-                    )}
-                  </button>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Share 弹窗 */}
       {showShare && (
@@ -542,7 +378,7 @@ export default function InvitationPage() {
               <div className="p-4 bg-[#f7f5f0] rounded-xl">
                 <QRCodeSVG 
                   value={typeof window !== 'undefined' ? window.location.href : ''}
-                  size={160}
+                  size={180}
                   level="M"
                   bgColor="#f7f5f0"
                   fgColor="#0a0a0a"
