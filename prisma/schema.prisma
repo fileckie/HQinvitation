@@ -1,0 +1,79 @@
+// 私域宴请邀请函系统 - 数据库模型
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 餐厅信息
+model Restaurant {
+  id          String   @id @default(uuid())
+  name        String   // 餐厅名称
+  address     String   // 餐厅地址
+  phone       String   // 联系电话
+  description String?  // 品牌介绍
+  chefName    String?  // 主厨姓名
+  chefIntro   String?  // 主厨介绍
+  logo        String?  // Logo图片URL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  banquets Banquet[]
+}
+
+// 宴请活动
+model Banquet {
+  id          String   @id @default(uuid())
+  
+  // 基础信息
+  title       String   // 宴请主题
+  date        String   // 宴请日期
+  time        String   // 宴请时间
+  guestCount  Int      // 宾客人数
+  roomName    String   // 包厢名称
+  hostName    String   // 宴请主人姓名
+  hostPhone   String   // 宴请主人电话
+  
+  // 菜单信息（JSON存储）
+  menu        String   // 今日菜单 JSON
+  specialDishes String? // 招牌菜推荐 JSON
+  
+  // 关联餐厅
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  
+  // 其他信息
+  notes       String?  // 备注/忌口
+  status      String   @default("active") // active, completed, cancelled
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // RSVP 关联
+  rsvps       RSVP[]
+}
+
+// 宾客 RSVP
+model RSVP {
+  id            String   @id @default(uuid())
+  banquetId     String
+  banquet       Banquet  @relation(fields: [banquetId], references: [id], onDelete: Cascade)
+  
+  // 宾客信息
+  guestName     String   // 宾客姓名
+  guestPhone    String?  // 宾客电话
+  
+  // RSVP 状态
+  status        String   @default("pending") // pending, confirmed, declined
+  attendeeCount Int      @default(1) // 出席人数
+  
+  // 忌口与备注
+  dietaryRestrictions String? // 忌口/过敏
+  message       String?  // 留言
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
