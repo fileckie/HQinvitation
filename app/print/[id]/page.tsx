@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { Printer, ChevronLeft, Eye, Download } from 'lucide-react'
+import { Printer, ArrowLeft, Eye, Download } from 'lucide-react'
 import Link from 'next/link'
 import { toPng } from 'html-to-image'
 
@@ -27,7 +27,6 @@ interface BanquetData {
     name: string
     address: string
     phone: string
-    description?: string
     chefName?: string
   }
   rsvps?: {
@@ -80,7 +79,6 @@ export default function PrintPage() {
     return weekdays[date.getDay()]
   }
 
-  // 导出菜牌图片
   const exportGuestCard = async () => {
     if (!guestCardRef.current) return
     try {
@@ -90,44 +88,35 @@ export default function PrintPage() {
       link.href = dataUrl
       link.click()
     } catch (error) {
-      alert('导出失败，请重试')
+      alert('导出失败')
     }
   }
 
-  // 导出员工卡图片
   const exportStaffCard = async () => {
     if (!staffCardRef.current) return
     try {
       const dataUrl = await toPng(staffCardRef.current, { quality: 0.95, pixelRatio: 2 })
       const link = document.createElement('a')
-      link.download = `${data?.title}_员工信息卡.png`
+      link.download = `${data?.title}_员工卡.png`
       link.href = dataUrl
       link.click()
     } catch (error) {
-      alert('导出失败，请重试')
+      alert('导出失败')
     }
-  }
-
-  // 打印当前标签页
-  const handlePrint = () => {
-    window.print()
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-2 border-[#c9a962] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#6b6560]">加载中...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2]">
+        <div className="w-12 h-12 border border-[#C9A962] border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
-        <p className="text-[#6b6560]">数据不存在</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2]">
+        <p className="text-[#8A8A8A]">数据不存在</p>
       </div>
     )
   }
@@ -140,34 +129,31 @@ export default function PrintPage() {
     .join('； ')
 
   return (
-    <div className="min-h-screen bg-[#f7f5f0]">
+    <div className="min-h-screen bg-[#FAF7F2]">
       {/* Header */}
-      <header className="no-print bg-white border-b border-[#e8e4de] sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="no-print fixed top-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-sm border-b border-[#E5E0D8]">
+        <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link 
-              href="/admin/list"
-              className="p-2 text-[#6b6560] hover:text-[#0a0a0a] hover:bg-[#f7f5f0] rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
+            <Link href="/admin/list" className="text-[#8A8A8A] hover:text-[#1A1A1A]">
+              <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="font-serif-title text-lg font-bold text-[#0a0a0a]">{data.title}</h1>
-              <p className="text-xs text-[#6b6560]">打印物料预览</p>
+              <h1 className="font-display text-sm tracking-[0.15em] text-[#1A1A1A]">{data.title}</h1>
+              <p className="text-xs text-[#8A8A8A]">打印物料预览</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href={`/invitation/${data.id}`}
               target="_blank"
-              className="flex items-center gap-2 px-4 py-2 text-[#6b6560] hover:text-[#0a0a0a] transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
             >
               <Eye className="w-4 h-4" />
               预览邀请
             </Link>
             <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#0a0a0a] text-white rounded-lg hover:bg-[#1a1a1a] transition-colors"
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#1A1A1A] text-white text-sm tracking-wider hover:bg-[#2C2C2C] transition-colors"
             >
               <Printer className="w-4 h-4" />
               打印
@@ -177,299 +163,251 @@ export default function PrintPage() {
       </header>
 
       {/* Tab切换 */}
-      <div className="no-print max-w-6xl mx-auto px-6 py-4">
-        <div className="flex gap-2 bg-white p-1 rounded-xl border border-[#e8e4de] w-fit">
-          <button
-            onClick={() => setActiveTab('guest')}
-            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'guest'
-                ? 'bg-[#0a0a0a] text-white'
-                : 'text-[#6b6560] hover:text-[#0a0a0a]'
-            }`}
-          >
-            对外菜牌
-            <span className="text-xs opacity-60">(给客人)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('staff')}
-            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'staff'
-                ? 'bg-[#0a0a0a] text-white'
-                : 'text-[#6b6560] hover:text-[#0a0a0a]'
-            }`}
-          >
-            对内员工卡
-            <span className="text-xs opacity-60">(含备注)</span>
-          </button>
+      <div className="no-print fixed top-16 left-0 right-0 z-40 bg-[#FAF7F2] border-b border-[#E5E0D8]">
+        <div className="max-w-6xl mx-auto px-8 py-4">
+          <div className="flex gap-1 bg-[#F5F0E8] p-1 w-fit">
+            <button
+              onClick={() => setActiveTab('guest')}
+              className={`px-6 py-2.5 text-sm tracking-wider transition-colors ${
+                activeTab === 'guest'
+                  ? 'bg-[#1A1A1A] text-white'
+                  : 'text-[#8A8A8A] hover:text-[#1A1A1A]'
+              }`}
+            >
+              对外菜牌
+            </button>
+            <button
+              onClick={() => setActiveTab('staff')}
+              className={`px-6 py-2.5 text-sm tracking-wider transition-colors ${
+                activeTab === 'staff'
+                  ? 'bg-[#1A1A1A] text-white'
+                  : 'text-[#8A8A8A] hover:text-[#1A1A1A]'
+              }`}
+            >
+              对内员工卡
+            </button>
+          </div>
         </div>
       </div>
 
       {/* 对外菜牌 */}
       {activeTab === 'guest' && (
-        <div className="max-w-4xl mx-auto px-6 pb-8">
-          <div className="no-print mb-4 flex justify-end">
+        <div className="pt-40 pb-20 px-8">
+          <div className="no-print max-w-4xl mx-auto mb-6 flex justify-end">
             <button
               onClick={exportGuestCard}
-              className="flex items-center gap-2 px-4 py-2 bg-[#c9a962] text-white rounded-lg hover:bg-[#a0854a] transition-colors text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#C9A962] text-white text-sm tracking-wider hover:bg-[#B87333] transition-colors"
             >
               <Download className="w-4 h-4" />
               导出图片
             </button>
           </div>
 
-          {/* 菜牌设计 - A4 纵向 */}
+          {/* 菜牌设计 */}
           <div 
             ref={guestCardRef}
-            className="bg-white shadow-lg print:shadow-none"
-            style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}
+            className="bg-white max-w-md mx-auto"
+            style={{ width: '375px', minHeight: '667px' }}
           >
             {/* 顶部装饰 */}
-            <div className="h-3" style={{ background: 'linear-gradient(135deg, #a0854a 0%, #c9a962 50%, #e8d5a3 100%)' }}></div>
+            <div className="h-1 bg-[#C9A962]"></div>
             
             {/* 头部 */}
-            <div className="text-center py-10 px-12">
-              <p className="text-[#c9a962] text-xs tracking-[0.3em] mb-3">{data.restaurant.name}</p>
-              <h1 className="font-serif-title text-3xl font-bold text-[#0a0a0a] mb-2">今日菜单</h1>
-              <div className="w-16 h-px bg-[#c9a962] mx-auto my-4"></div>
-              <p className="text-[#6b6560] text-sm">{data.title}</p>
+            <div className="bg-[#1A1A1A] text-center py-10 px-6">
+              <p className="text-[#C9A962] text-[10px] tracking-[0.4em] mb-4">{data.restaurant.name}</p>
+              <h1 className="font-display text-2xl text-white tracking-wider mb-2">今日菜单</h1>
+              <div className="w-8 h-px bg-[#C9A962] mx-auto mt-4"></div>
             </div>
 
             {/* 宴请信息 */}
-            <div className="px-16 pb-8">
-              <div className="flex justify-center items-center gap-8 text-sm text-[#6b6560] border-y border-[#e8e4de] py-4">
-                <span>{formatDate(data.date)} {getWeekday(data.date)}</span>
-                <span className="w-px h-4 bg-[#e8e4de]"></span>
-                <span>{data.time} 入席</span>
-                <span className="w-px h-4 bg-[#e8e4de]"></span>
-                <span>{data.roomName}</span>
-                <span className="w-px h-4 bg-[#e8e4de]"></span>
-                <span>{data.guestCount}位</span>
-              </div>
+            <div className="text-center py-6 border-b border-[#E5E0D8]">
+              <p className="font-display text-lg text-[#1A1A1A] mb-2">{data.title}</p>
+              <p className="text-xs text-[#8A8A8A] tracking-wider">
+                {formatShortDate(data.date)} {getWeekday(data.date)} · {data.time} · {data.roomName}
+              </p>
             </div>
 
-            {/* 菜单列表 */}
-            <div className="px-20 py-8">
-              <div className="grid grid-cols-1 gap-0">
-                {data.menu.map((dish, index) => (
-                  <div 
-                    key={index}
-                    className={`flex items-start py-5 ${
-                      index !== data.menu.length - 1 ? 'border-b border-[#f0ede8]' : ''
-                    }`}
-                  >
-                    <span className="text-[#c9a962] font-serif-title text-lg w-10 flex-shrink-0">
-                      {String(index + 1).padStart(2, '0')}
+            {/* 菜单 */}
+            <div className="py-6 px-6">
+              {data.menu.map((dish, index) => (
+                <div 
+                  key={index}
+                  className={`py-3 border-b border-[#E5E0D8] last:border-0 ${
+                    dish.isSignature ? 'bg-[#F5F0E8] -mx-6 px-6' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-[#C9A962] text-xs font-display w-5">{index + 1}</span>
+                    <span className={`text-sm ${dish.isSignature ? 'font-display text-[#1A1A1A]' : 'text-[#1A1A1A]'}`}>
+                      {dish.name}
                     </span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className={`text-lg ${dish.isSignature ? 'font-bold text-[#0a0a0a]' : 'text-[#0a0a0a]'}`}>
-                          {dish.name}
-                        </span>
-                        {dish.isSignature && (
-                          <span className="text-xs px-2 py-0.5 bg-[#c9a962] text-white rounded">
-                            招牌
-                          </span>
-                        )}
-                      </div>
-                      {dish.description && (
-                        <p className="text-sm text-[#6b6560] mt-1">{dish.description}</p>
-                      )}
-                    </div>
+                    {dish.isSignature && (
+                      <span className="ml-auto text-[8px] tracking-wider text-[#C9A962] border border-[#C9A962] px-1.5 py-0.5">
+                        招牌
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 主厨介绍 */}
-            {data.restaurant.chefName && (
-              <div className="px-16 py-8 border-t border-[#e8e4de]">
-                <div className="text-center">
-                  <p className="text-[#6b6560] text-sm">
-                    主厨：<span className="text-[#0a0a0a] font-medium">{data.restaurant.chefName}</span>
-                  </p>
                 </div>
-              </div>
-            )}
-
-            {/* 底部信息 */}
-            <div className="px-16 py-8 border-t border-[#e8e4de]">
-              <div className="text-center space-y-2">
-                <p className="text-[#0a0a0a] font-medium">{data.restaurant.name}</p>
-                <p className="text-sm text-[#6b6560]">{data.restaurant.address}</p>
-                <p className="text-sm text-[#c9a962]">{data.restaurant.phone}</p>
-              </div>
+              ))}
             </div>
 
-            {/* 底部装饰 */}
-            <div className="h-3" style={{ background: 'linear-gradient(135deg, #a0854a 0%, #c9a962 50%, #e8d5a3 100%)' }}></div>
+            {/* 底部 */}
+            <div className="mt-auto py-6 text-center border-t border-[#E5E0D8]">
+              <p className="text-[10px] tracking-[0.2em] text-[#8A8A8A] mb-1">{data.restaurant.name}</p>
+              <p className="text-[10px] text-[#C9A962]">{data.restaurant.phone}</p>
+            </div>
+            
+            <div className="h-1 bg-[#C9A962]"></div>
           </div>
         </div>
       )}
 
       {/* 对内员工卡 */}
       {activeTab === 'staff' && (
-        <div className="max-w-4xl mx-auto px-6 pb-8">
-          <div className="no-print mb-4 flex justify-end">
+        <div className="pt-40 pb-20 px-8">
+          <div className="no-print max-w-4xl mx-auto mb-6 flex justify-end">
             <button
               onClick={exportStaffCard}
-              className="flex items-center gap-2 px-4 py-2 bg-[#c9a962] text-white rounded-lg hover:bg-[#a0854a] transition-colors text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#C9A962] text-white text-sm tracking-wider hover:bg-[#B87333] transition-colors"
             >
               <Download className="w-4 h-4" />
               导出图片
             </button>
           </div>
 
-          {/* 员工卡设计 - A4 横向 */}
+          {/* 员工卡设计 - A4横向 */}
           <div 
             ref={staffCardRef}
-            className="bg-white shadow-lg print:shadow-none"
-            style={{ width: '297mm', minHeight: '210mm', margin: '0 auto' }}
+            className="bg-white mx-auto"
+            style={{ width: '297mm', height: '210mm', padding: '20mm' }}
           >
-            {/* 顶部装饰 */}
-            <div className="h-2" style={{ background: 'linear-gradient(135deg, #a0854a 0%, #c9a962 50%, #e8d5a3 100%)' }}></div>
-            
-            <div className="p-8">
-              {/* 标题 */}
-              <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-[#0a0a0a]">
-                <div>
-                  <h1 className="font-serif-title text-2xl font-bold text-[#0a0a0a]">服务信息卡</h1>
-                  <p className="text-[#6b6560] text-sm mt-1">内部使用 · 请勿对外</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[#c9a962] font-bold text-xl">{data.restaurant.name}</p>
-                  <p className="text-[#6b6560] text-xs">{formatShortDate(data.date)} {data.time}</p>
-                </div>
+            {/* 顶部 */}
+            <div className="flex justify-between items-start mb-8 pb-4 border-b-2 border-[#1A1A1A]">
+              <div>
+                <p className="text-xs tracking-[0.3em] text-[#C9A962] mb-1">INTERNAL USE ONLY</p>
+                <h1 className="font-display text-2xl text-[#1A1A1A] tracking-wider">服务信息卡</h1>
               </div>
-
-              {/* 主要内容 - 三列布局 */}
-              <div className="grid grid-cols-3 gap-6">
-                {/* 第一列：宴请信息 */}
-                <div className="border-r border-[#e8e4de] pr-6">
-                  <h3 className="font-bold text-[#0a0a0a] mb-4 flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-[#c9a962] rounded-full"></span>
-                    宴请信息
-                  </h3>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="text-[#6b6560]">主题：</span>
-                      <span className="font-medium text-[#0a0a0a]">{data.title}</span>
-                    </div>
-                    <div>
-                      <span className="text-[#6b6560]">日期：</span>
-                      <span className="text-[#0a0a0a]">{formatDate(data.date)} {getWeekday(data.date)}</span>
-                    </div>
-                    <div>
-                      <span className="text-[#6b6560]">时间：</span>
-                      <span className="text-[#0a0a0a]">{data.time}</span>
-                    </div>
-                    <div>
-                      <span className="text-[#6b6560]">包厢：</span>
-                      <span className="font-medium text-[#0a0a0a]">{data.roomName}</span>
-                    </div>
-                    <div>
-                      <span className="text-[#6b6560]">预订人数：</span>
-                      <span className="text-[#0a0a0a]">{data.guestCount}位</span>
-                    </div>
-                    <div className="pt-2 border-t border-[#e8e4de]">
-                      <span className="text-[#6b6560]">主人：</span>
-                      <span className="font-medium text-[#0a0a0a]">{data.hostName}</span>
-                    </div>
-                    <div>
-                      <span className="text-[#6b6560]">电话：</span>
-                      <span className="text-[#0a0a0a]">{data.hostPhone}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 第二列：菜单 */}
-                <div className="border-r border-[#e8e4de] pr-6">
-                  <h3 className="font-bold text-[#0a0a0a] mb-4 flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-[#c9a962] rounded-full"></span>
-                    今日菜单
-                    <span className="text-xs font-normal text-[#6b6560]">({data.menu.length}道)</span>
-                  </h3>
-                  <div className="space-y-2 text-sm max-h-[400px] overflow-y-auto">
-                    {data.menu.map((dish, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <span className="text-[#c9a962] w-5 flex-shrink-0">{index + 1}.</span>
-                        <div className="flex-1">
-                          <span className={dish.isSignature ? 'font-bold text-[#0a0a0a]' : 'text-[#0a0a0a]'}>
-                            {dish.name}
-                          </span>
-                          {dish.isSignature && (
-                            <span className="ml-1.5 text-xs text-[#c9a962]">★</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 第三列：服务备注 */}
-                <div>
-                  <h3 className="font-bold text-[#0a0a0a] mb-4 flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-[#c9a962] rounded-full"></span>
-                    服务备注
-                  </h3>
-                  
-                  <div className="space-y-4 text-sm">
-                    {/* RSVP统计 */}
-                    <div className="bg-[#f7f5f0] p-3 rounded-lg">
-                      <p className="text-[#6b6560] text-xs mb-1">已确认出席</p>
-                      <p className="text-2xl font-bold text-[#0a0a0a]">{confirmedCount} <span className="text-sm font-normal">人</span></p>
-                      {data.rsvps && data.rsvps.length > 0 && (
-                        <p className="text-xs text-[#6b6560] mt-1">{data.rsvps.length}人回复</p>
-                      )}
-                    </div>
-
-                    {/* 忌口信息 */}
-                    {(dietaryNotes || data.notes) && (
-                      <div className="bg-red-50 border border-red-100 p-3 rounded-lg">
-                        <p className="text-red-600 text-xs font-medium mb-2">⚠️ 特别注意</p>
-                        {dietaryNotes && (
-                          <p className="text-red-700 text-xs leading-relaxed mb-2">
-                            忌口：{dietaryNotes}
-                          </p>
-                        )}
-                        {data.notes && (
-                          <p className="text-red-700 text-xs leading-relaxed">
-                            备注：{data.notes}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 服务要点 */}
-                    <div className="bg-[#f7f5f0] p-3 rounded-lg">
-                      <p className="text-[#6b6560] text-xs mb-2">服务要点</p>
-                      <ul className="text-xs text-[#0a0a0a] space-y-1.5 list-disc list-inside">
-                        <li>提前15分钟开启包厢空调</li>
-                        <li>准备消毒毛巾和热茶</li>
-                        <li>上菜节奏根据宴席进度调整</li>
-                        <li>招牌菜重点介绍</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 底部联系 */}
-              <div className="mt-6 pt-4 border-t border-[#e8e4de] flex justify-between items-center text-xs text-[#6b6560]">
-                <span>{data.restaurant.name} · {data.restaurant.address}</span>
-                <span>预订电话：{data.restaurant.phone}</span>
+              <div className="text-right">
+                <p className="font-display text-lg text-[#1A1A1A]">{data.restaurant.name}</p>
+                <p className="text-xs text-[#8A8A8A]">{formatShortDate(data.date)} {data.time}</p>
               </div>
             </div>
 
-            {/* 底部装饰 */}
-            <div className="h-2" style={{ background: 'linear-gradient(135deg, #a0854a 0%, #c9a962 50%, #e8d5a3 100%)' }}></div>
+            {/* 三列布局 */}
+            <div className="grid grid-cols-3 gap-8">
+              {/* 第一列：宴请信息 */}
+              <div className="border-r border-[#E5E0D8] pr-8">
+                <h3 className="text-xs tracking-[0.2em] text-[#C9A962] mb-4">宴请信息</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="text-[#8A8A8A]">主题：</span>
+                    <span className="text-[#1A1A1A] font-display">{data.title}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8A8A8A]">日期：</span>
+                    <span className="text-[#1A1A1A]">{formatDate(data.date)} {getWeekday(data.date)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8A8A8A]">时间：</span>
+                    <span className="text-[#1A1A1A]">{data.time}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8A8A8A]">包厢：</span>
+                    <span className="text-[#1A1A1A] font-display">{data.roomName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8A8A8A]">预订人数：</span>
+                    <span className="text-[#1A1A1A]">{data.guestCount}位</span>
+                  </div>
+                  <div className="pt-2 border-t border-[#E5E0D8]">
+                    <span className="text-[#8A8A8A]">主人：</span>
+                    <span className="text-[#1A1A1A]">{data.hostName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8A8A8A]">电话：</span>
+                    <span className="text-[#1A1A1A]">{data.hostPhone}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 第二列：菜单 */}
+              <div className="border-r border-[#E5E0D8] pr-8">
+                <h3 className="text-xs tracking-[0.2em] text-[#C9A962] mb-4">
+                  菜单 <span className="text-[#8A8A8A]">({data.menu.length}道)</span>
+                </h3>
+                <div className="space-y-2 text-sm max-h-[400px] overflow-y-auto">
+                  {data.menu.map((dish, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-[#C9A962] text-xs w-4">{index + 1}</span>
+                      <span className={dish.isSignature ? 'font-display text-[#1A1A1A]' : 'text-[#1A1A1A]'}>
+                        {dish.name}
+                      </span>
+                      {dish.isSignature && (
+                        <span className="text-[10px] text-[#C9A962]">★</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 第三列：服务备注 */}
+              <div>
+                <h3 className="text-xs tracking-[0.2em] text-[#C9A962] mb-4">服务备注</h3>
+                
+                <div className="space-y-4">
+                  {/* RSVP统计 */}
+                  <div className="bg-[#F5F0E8] p-4">
+                    <p className="text-xs text-[#8A8A8A] mb-1">已确认出席</p>
+                    <p className="font-display text-3xl text-[#1A1A1A]">{confirmedCount} <span className="text-sm font-normal">人</span></p>
+                    {data.rsvps && data.rsvps.length > 0 && (
+                      <p className="text-xs text-[#8A8A8A] mt-1">{data.rsvps.length}人回复</p>
+                    )}
+                  </div>
+
+                  {/* 忌口信息 */}
+                  {(dietaryNotes || data.notes) && (
+                    <div className="bg-red-50 border border-red-100 p-4">
+                      <p className="text-xs text-red-600 font-medium mb-2">⚠ 特别注意</p>
+                      {dietaryNotes && (
+                        <p className="text-xs text-red-700 leading-relaxed mb-2">
+                          忌口：{dietaryNotes}
+                        </p>
+                      )}
+                      {data.notes && (
+                        <p className="text-xs text-red-700 leading-relaxed">
+                          备注：{data.notes}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 服务要点 */}
+                  <div className="bg-[#F5F0E8] p-4">
+                    <p className="text-xs text-[#8A8A8A] mb-3">服务要点</p>
+                    <ul className="text-xs text-[#1A1A1A] space-y-2 list-disc list-inside">
+                      <li>提前15分钟开启包厢空调</li>
+                      <li>准备消毒毛巾和热茶</li>
+                      <li>上菜节奏根据宴席进度调整</li>
+                      <li>招牌菜重点介绍</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 底部 */}
+            <div className="mt-8 pt-4 border-t border-[#E5E0D8] flex justify-between text-xs text-[#8A8A8A]">
+              <span>{data.restaurant.name} · {data.restaurant.address}</span>
+              <span>预订：{data.restaurant.phone}</span>
+            </div>
           </div>
         </div>
       )}
 
       {/* 打印提示 */}
-      <div className="no-print max-w-4xl mx-auto px-6 pb-8 text-center">
-        <p className="text-sm text-[#6b6560]">
-          {activeTab === 'guest' ? '对外菜牌建议用 A4 纸张纵向打印' : '对内员工卡建议用 A4 纸张横向打印'}
+      <div className="no-print max-w-4xl mx-auto px-8 pb-8 text-center">
+        <p className="text-sm text-[#8A8A8A]">
+          {activeTab === 'guest' ? '对外菜牌建议用手机尺寸打印或导出图片' : '对内员工卡建议用 A4 横向打印'}
         </p>
       </div>
     </div>

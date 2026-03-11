@@ -9,22 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
-        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        serif: ['Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', 'serif'],
+        display: ['Noto Serif SC', 'Source Han Serif SC', 'serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'sans-serif'],
       },
       colors: {
-        gold: {
-          50: '#fdf9f0',
-          100: '#fbf0d9',
-          200: '#f6e0b3',
-          300: '#edc67a',
-          400: '#e3a947',
-          500: '#d4902a',
-          600: '#b87620',
-          700: '#945c1d',
-          800: '#7a4d1e',
-          900: '#663f1b',
-        },
+        pearl: '#FAF7F2',
+        ivory: '#F5F0E8',
+        cream: '#EDE8E0',
+        charcoal: '#1A1A1A',
+        'deep-gray': '#2C2C2C',
+        'medium-gray': '#4A4A4A',
+        'light-gray': '#8A8A8A',
+        'border-gray': '#E5E0D8',
+        gold: '#C9A962',
+        bronze: '#B87333',
+      },
+      letterSpacing: {
+        'widest': '0.3em',
       },
     },
   },
